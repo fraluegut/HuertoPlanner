@@ -1,0 +1,22 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.AppBar {
+  width: 100%;
+  position: fixed; /* Asegura que la barra esté siempre visible en la parte superior */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1100; /* Ajusta el z-index para asegurarte de que la barra esté sobre otros elementos */
+}
