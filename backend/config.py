@@ -1,7 +1,5 @@
-# config.py
-
-DB_HOST = "localhost"
-DB_NAME = "tu_base_de_datos"
-DB_USER = "tu_usuario"
-DB_PASSWORD = "tu_contraseña"
-DB_PORT = "5432"  # Cambia esto si usas un puerto diferente
+DB_HOST = '192.168.18.197'
+DB_NAME = 'huertoplan'
+DB_USER = 'fraluegut'
+DB_PASSWORD = '1376qeuy'
+DB_PORT = 3306  # Puerto por defecto de MySQL
