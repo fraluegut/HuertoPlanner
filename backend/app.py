@@ -128,7 +128,7 @@ class Especie(Resource):
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM especies WHERE id_especie = %s', (id_especie,))
         especie = cursor.fetchone()
         cursor.close()
@@ -180,7 +180,7 @@ class ProduccionList(Resource):
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM datos_produccion')
         produccion = cursor.fetchall()
         cursor.close()
@@ -219,7 +219,7 @@ class PlantasPorCeldaList(Resource):
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM plantas_por_celda')
         plantas = cursor.fetchall()
         cursor.close()
@@ -257,7 +257,7 @@ class BancalList(Resource):
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM bancales')
         bancales = cursor.fetchall()
         cursor.close()
@@ -295,7 +295,7 @@ class CeldaList(Resource):
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM celdas')
         celdas = cursor.fetchall()
         cursor.close()
@@ -333,7 +333,7 @@ class PlantasEnBancalList(Resource):
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM plantas_en_bancales')
         plantas = cursor.fetchall()
         cursor.close()
