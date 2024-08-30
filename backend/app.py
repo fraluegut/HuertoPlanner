@@ -1,10 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_restx import Api, Resource, fields
 from db import get_db_connection
+from flask_cors import CORS  # Importa la extensión
 from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
-
+CORS(app)
 # Configuración de Flask-RESTx para la API y Swagger
 api = Api(app, version='1.0', title='HuertoPlan API',
           description='API para gestionar los datos de producción y especies de un huerto.')
@@ -176,40 +177,52 @@ class Especie(Resource):
 class ProduccionList(Resource):
     @ns_produccion.doc('list_produccion')
     def get(self):
-        """Obtener todos los datos de producción"""
+        """Obtener todas las producciones"""
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
+
         cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM datos_produccion')
-        produccion = cursor.fetchall()
+        producciones = cursor.fetchall()
         cursor.close()
         conn.close()
-        return jsonify(produccion)
+        return jsonify(producciones)
 
     @ns_produccion.doc('create_produccion')
     @ns_produccion.expect(produccion_model)
     def post(self):
-        """Crear nuevos datos de producción"""
+        """Crear una nueva producción"""
         new_produccion = request.json
+
+        # Verificar si 'id_especie' está en los datos recibidos
+        if 'id_especie' not in new_produccion:
+            return {"message": "Error: 'id_especie' es requerido."}, 400
+
+        # Asignar variables
+        id_especie = new_produccion['id_especie']
+        produccion_kg = new_produccion['produccion_por_planta_kg']
+        produccion_unidades = new_produccion['produccion_por_planta_unidades']
+        personalizada_kg = new_produccion['produccion_personalizada_por_planta_kg']
+        personalizada_unidades = new_produccion['produccion_personalizada_por_planta_unidades']
+
+        # Conexión a la base de datos
         conn = get_db_connection()
         if conn is None:
             return {"message": "Error de conexión a la base de datos"}, 500
+
         cursor = conn.cursor()
         cursor.execute(
             '''
             INSERT INTO datos_produccion (id_especie, produccion_por_planta_kg, produccion_por_planta_unidades, produccion_personalizada_por_planta_kg, produccion_personalizada_por_planta_unidades)
-            VALUES (%s, %s, %s, %s, %s) RETURNING id_produccion;
+            VALUES (%s, %s, %s, %s, %s);
             ''',
-            (new_produccion['id_especie'], new_produccion['produccion_por_planta_kg'], new_produccion['produccion_por_planta_unidades'],
-             new_produccion.get('produccion_personalizada_por_planta_kg'), new_produccion.get('produccion_personalizada_por_planta_unidades'))
+            (id_especie, produccion_kg, produccion_unidades, personalizada_kg, personalizada_unidades)
         )
-        produccion_id = cursor.fetchone()[0]
-        conn.commit()
+        conn.commit()  # Confirmar los cambios
         cursor.close()
         conn.close()
-        return {"id_produccion": produccion_id, "message": "Producción creada exitosamente"}, 201
-
+        return {"message": "Producción creada exitosamente"}, 201
 # Endpoints para Plantas por Celda
 @ns_plantas_por_celda.route('/')
 class PlantasPorCeldaList(Resource):

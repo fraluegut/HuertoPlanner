@@ -6,7 +6,7 @@ const Sidebar = () => {
   return (
     <div style={{ width: '250px', backgroundColor: '#f8f9fa', height: '100vh', padding: '20px' }}>
       <List>
-        <ListItem button component={NavLink} to="/">
+        <ListItem button component={NavLink} to="/" exact>
           <ListItemText primary="Dashboard" />
         </ListItem>
         <ListItem button component={NavLink} to="/diseno-bancal">
@@ -21,11 +21,9 @@ const Sidebar = () => {
         <ListItem button component={NavLink} to="/creditos">
           <ListItemText primary="Créditos" />
         </ListItem>
-        {/* Nuevo enlace para Plantas por Celda */}
         <ListItem button component={NavLink} to="/plantas-por-celda">
           <ListItemText primary="Plantas por Celda" />
         </ListItem>
-        {/* New link for Producción por Planta */}
         <ListItem button component={NavLink} to="/produccion-por-planta">
           <ListItemText primary="Producción por Planta" />
         </ListItem>
