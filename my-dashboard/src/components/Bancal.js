@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button, Select, MenuItem, TextField } from '@mui/material'; // Importa TextField
+import { Button, Select, MenuItem, TextField } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import LocalFloristIcon from '@mui/icons-material/LocalFlorist';
 import { useBancales } from '../context/BancalesContext';
@@ -8,7 +8,12 @@ const Bancal = ({ bancal, semanaActual }) => {
   const { updateBancalGrid } = useBancales();
   const [selectedCell, setSelectedCell] = useState(null);
   const [selectedPlant, setSelectedPlant] = useState('');
-  const [growthDuration, setGrowthDuration] = useState(3); // Utiliza growthDuration
+  const [growthDuration, setGrowthDuration] = useState(3);
+
+  // Verifica si 'bancal' y 'bancal.grid' están definidos y son válidos
+  if (!bancal || !Array.isArray(bancal.grid)) {
+    return <div>Error: Bancal no definido o datos inválidos</div>;
+  }
 
   const addColumn = () => {
     const newGrid = bancal.grid.map(row => [...row, { plant: null, startWeek: null, duration: 0 }]);
@@ -49,13 +54,14 @@ const Bancal = ({ bancal, semanaActual }) => {
       {/* Grid del bancal */}
       <div>
         {bancal.grid.map((row, rowIndex) => (
-          <div key={rowIndex} style={{ display: 'flex' }}>
+          <div key={`row-${rowIndex}`} style={{ display: 'flex' }}>
             {row.map((cell, colIndex) => {
-              // Add a check to ensure cell is not null
-              const isPlanted = cell && cell.plant && (semanaActual >= cell.startWeek) && (semanaActual < cell.startWeek + cell.duration);
+              if (!cell) return null; // Verifica que 'cell' no sea null o undefined
+              
+              const isPlanted = cell.plant && (semanaActual >= cell.startWeek) && (semanaActual < cell.startWeek + cell.duration);
               return (
                 <div
-                  key={colIndex}
+                  key={`cell-${rowIndex}-${colIndex}`}
                   onClick={() => handleCellClick(rowIndex, colIndex)}
                   style={{
                     width: '50px',
@@ -95,7 +101,6 @@ const Bancal = ({ bancal, semanaActual }) => {
             <MenuItem value="tomato">Tomate</MenuItem>
             {/* Puedes agregar más opciones aquí */}
           </Select>
-          {/* Agrega un campo para seleccionar la duración del crecimiento */}
           <TextField
             label="Duración del Crecimiento (semanas)"
             type="number"
