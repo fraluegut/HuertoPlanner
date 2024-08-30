@@ -51,7 +51,8 @@ const Bancal = ({ bancal, semanaActual }) => {
         {bancal.grid.map((row, rowIndex) => (
           <div key={rowIndex} style={{ display: 'flex' }}>
             {row.map((cell, colIndex) => {
-              const isPlanted = cell.plant && (semanaActual >= cell.startWeek) && (semanaActual < cell.startWeek + cell.duration);
+              // Add a check to ensure cell is not null
+              const isPlanted = cell && cell.plant && (semanaActual >= cell.startWeek) && (semanaActual < cell.startWeek + cell.duration);
               return (
                 <div
                   key={colIndex}

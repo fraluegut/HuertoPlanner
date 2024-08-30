@@ -8,6 +8,8 @@ import VistaBancal from './pages/VistaBancal';
 import Recursos from './pages/Recursos';
 import Creditos from './pages/Creditos';
 import { BancalesProvider } from './context/BancalesContext'; // Importamos el proveedor
+import PlantasPorCelda from './components/PlantasPorCelda'; // Importar la nueva página
+import ProduccionPorPlanta from './components/ProduccionPorPlanta'; // Import the new page
 
 function App() {
   return (
@@ -24,6 +26,9 @@ function App() {
                 <Route path="/vista-bancal" element={<VistaBancal />} />
                 <Route path="/recursos" element={<Recursos />} />
                 <Route path="/creditos" element={<Creditos />} />
+                {/* Nueva ruta para la página Plantas por Celda */}
+                <Route path="/plantas-por-celda" element={<PlantasPorCelda />} />
+                <Route path="/produccion-por-planta" element={<ProduccionPorPlanta />} />
               </Routes>
             </div>
           </div>
