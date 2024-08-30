@@ -21,6 +21,14 @@ const Sidebar = () => {
         <ListItem button component={NavLink} to="/creditos">
           <ListItemText primary="Créditos" />
         </ListItem>
+        {/* Nuevo enlace para Plantas por Celda */}
+        <ListItem button component={NavLink} to="/plantas-por-celda">
+          <ListItemText primary="Plantas por Celda" />
+        </ListItem>
+        {/* New link for Producción por Planta */}
+        <ListItem button component={NavLink} to="/produccion-por-planta">
+          <ListItemText primary="Producción por Planta" />
+        </ListItem>
       </List>
     </div>
   );
