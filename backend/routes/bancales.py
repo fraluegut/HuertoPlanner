@@ -105,6 +105,7 @@ class Bancal(Resource):
     def put(self, id_bancal):
         """Actualizar un bancal existente"""
         update_data = request.json
+        print(update_data)
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(

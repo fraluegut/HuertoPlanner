@@ -7,11 +7,11 @@ ns = Namespace('celdas_temporales', description='Operaciones relacionadas con la
 
 # Define el modelo de datos para las celdas temporales
 celda_temporal_model = ns.model('CeldaTemporal', {
-    'id_celda_temporal': fields.Integer(readOnly=True, description='Identificador único de la celda temporal'),
+    'id': fields.Integer(readOnly=True, description='Identificador único de la celda temporal'),
     'id_bancal': fields.Integer(required=True, description='Identificador del bancal'),
     'fila': fields.Integer(required=True, description='Número de fila de la celda'),
     'columna': fields.Integer(required=True, description='Número de columna de la celda'),
-    'contenido': fields.String(description='Contenido de la celda (planta, etc.)'),
+    'contenido': fields.String(required=True, description='Contenido de la celda (id de planta)'),
     'semana': fields.Integer(required=True, description='Semana del año'),
     'ano': fields.Integer(required=True, description='Año')
 })
@@ -37,6 +37,12 @@ class CeldaTemporalList(Resource):
     def post(self):
         """Crear una nueva celda temporal"""
         new_celda = request.json
+        print('Datos recibidos para crear celda:', new_celda)  # Log para ver los datos recibidos
+
+        # Verificar que el campo 'contenido' esté presente y no esté vacío
+        if 'contenido' not in new_celda or not new_celda['contenido']:
+            return {"message": "El campo 'contenido' es requerido y no puede estar vacío."}, 400
+
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
@@ -52,23 +58,24 @@ class CeldaTemporalList(Resource):
             conn.close()
             return {"message": "Celda temporal creada exitosamente"}, 201
         except Exception as e:
+            print('Error al crear celda temporal:', e)  # Log para ver el error
             return {"message": "Error al crear la celda temporal", "error": str(e)}, 500
 
     def options(self):
         """Responder a solicitudes OPTIONS"""
         return {'status': 'ok'}, 200
 
-@ns.route('/<int:id_celda_temporal>')
+@ns.route('/<int:id>')
 @ns.response(404, 'Celda temporal no encontrada')
-@ns.param('id_celda_temporal', 'El identificador de la celda temporal')
+@ns.param('id', 'El identificador de la celda temporal')
 class CeldaTemporal(Resource):
     @ns.doc('get_celda_temporal')
-    def get(self, id_celda_temporal):
+    def get(self, id):
         """Obtener una celda temporal por ID"""
         try:
             conn = get_db_connection()
             cursor = conn.cursor(dictionary=True)
-            cursor.execute('SELECT * FROM celdas_temporales WHERE id_celda_temporal = %s', (id_celda_temporal,))
+            cursor.execute('SELECT * FROM celdas_temporales WHERE id = %s', (id,))
             celda = cursor.fetchone()
             cursor.close()
             conn.close()
@@ -80,40 +87,44 @@ class CeldaTemporal(Resource):
 
     @ns.doc('update_celda_temporal')
     @ns.expect(celda_temporal_model)
-    def put(self, id_celda_temporal):
+    def put(self, id):
         """Actualizar una celda temporal existente"""
         update_data = request.json
+        print('Datos recibidos para actualizar celda:', update_data)  # Log para ver los datos recibidos
+
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute(
                 '''
                 UPDATE celdas_temporales SET contenido = %s, semana = %s, ano = %s
-                WHERE id_celda_temporal = %s
+                WHERE id = %s
                 ''',
-                (update_data['contenido'], update_data['semana'], update_data['ano'], id_celda_temporal)
+                (update_data['contenido'], update_data['semana'], update_data['ano'], id)
             )
             conn.commit()
             cursor.close()
             conn.close()
             return {"message": "Celda temporal actualizada exitosamente"}, 200
         except Exception as e:
+            print('Error al actualizar celda temporal:', e)  # Log para ver el error
             return {"message": "Error al actualizar la celda temporal", "error": str(e)}, 500
 
     @ns.doc('delete_celda_temporal')
-    def delete(self, id_celda_temporal):
+    def delete(self, id):
         """Eliminar una celda temporal por ID"""
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute('DELETE FROM celdas_temporales WHERE id_celda_temporal = %s', (id_celda_temporal,))
+            cursor.execute('DELETE FROM celdas_temporales WHERE id = %s', (id,))
             conn.commit()
             cursor.close()
             conn.close()
             return {"message": "Celda temporal eliminada exitosamente"}, 200
         except Exception as e:
+            print('Error al eliminar celda temporal:', e)  # Log para ver el error
             return {"message": "Error al eliminar la celda temporal", "error": str(e)}, 500
 
-    def options(self):
+    def options(self, id):
         """Responder a solicitudes OPTIONS"""
         return {'status': 'ok'}, 200

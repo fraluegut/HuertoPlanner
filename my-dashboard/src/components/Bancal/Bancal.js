@@ -5,9 +5,29 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import Cell from './Cell';
-import EditNameModal from './EditNameModel';
+import EditNameModal from './EditNameModal';
 import PlantSelectionModal from './PlantSelectionModal';
 import axios from 'axios';
+
+// Definición de plantIcons
+const plantIcons = {
+  1: require('../../assets/icons/sandia.png'),
+  2: require('../../assets/icons/tomate.png'),
+  3: require('../../assets/icons/lechuga.png'),
+  4: require('../../assets/icons/pimiento.png'),
+};
+
+// Definición de phaseColors
+const phaseColors = {
+  Siembra: '#c8e6c9',
+  Germinación: '#ffcc80',
+  Crecimiento: '#ffe082',
+  Floración: '#f48fb1',
+  Fructificación: '#ce93d8',
+  Maduración: '#80cbc4',
+  Cosecha: '#a5d6a7',
+  Senescencia: '#b0bec5',
+};
 
 const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
   const [selectedCell, setSelectedCell] = useState(null);
@@ -21,21 +41,24 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const initializeGrid = useCallback(() => {
+    console.log('Inicializando grid...');
     const initialGrid = Array(bancal.filas)
       .fill(null)
       .map(() => Array(bancal.columnas).fill(null));
-  
+    
+    console.log('Grid inicial creado:', initialGrid);
+    
     if (Array.isArray(bancal.celdas)) {
       bancal.celdas.forEach(celda => {
-        // Mostrar solo las celdas que corresponden a la semana y año actual
         if (celda.semana === semanaActual && celda.ano === anoActual) {
-          initialGrid[celda.fila][celda.columna] = celda.contenido;
+          initialGrid[celda.fila][celda.columna] = celda;
         }
       });
     } else {
       console.warn('bancal.celdas no es un array o está indefinido', bancal.celdas);
     }
-  
+
+    console.log('Grid inicializado:', initialGrid);
     setGrid(initialGrid);
   }, [bancal.filas, bancal.columnas, bancal.celdas, semanaActual, anoActual]);
 
@@ -44,42 +67,60 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
   }, [initializeGrid]);
 
   const handleCellClick = (rowIndex, colIndex) => {
+    console.log(`Clic en celda: fila ${rowIndex}, columna ${colIndex}`);
     setSelectedCell({ rowIndex, colIndex });
     setModalOpen(true);
   };
 
-  const handleSavePlant = async (plant) => {
+  const handleSavePlant = async (plantId) => {
     if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
       const updatedGrid = [...grid];
-      updatedGrid[rowIndex][colIndex] = plant[0];
+      updatedGrid[rowIndex][colIndex] = { contenido: plantId, fase: 'Siembra' };
 
       try {
         const celda = bancal.celdas.find(
           (c) => c.fila === rowIndex && c.columna === colIndex && c.semana === semanaActual && c.ano === anoActual
         );
+
+        console.log('Celda encontrada para actualizar o crear:', celda);
+
         if (celda) {
-          await axios.put(`http://localhost:5000/celdas_temporales/${celda.id_celda}`, {
-            contenido: plant[0],
+          console.log('Actualizando celda temporal existente...');
+          await axios.put(`http://localhost:5000/celdas_temporales/${celda.id_celda_temporal}`, {
+            contenido: plantId,
             semana: semanaActual,
-            ano: anoActual
+            ano: anoActual,
+            fase: 'Siembra',
           });
-          console.log('Celda actualizada en la base de datos');
+          console.log('Celda actualizada exitosamente.');
         } else {
-          const response = await axios.post('http://localhost:5000/celdas_temporales/', {
+          console.log('Creando nueva celda temporal...');
+          await axios.post('http://localhost:5000/celdas_temporales/', {
             id_bancal: bancal.id_bancal,
             fila: rowIndex,
             columna: colIndex,
-            contenido: plant[0],
+            contenido: plantId,
             semana: semanaActual,
-            ano: anoActual
+            ano: anoActual,
+            fase: 'Siembra',
           });
-          console.log('Celda creada en la base de datos', response.data);
+          console.log('Nueva celda creada exitosamente.');
         }
-        setMessage('Celda guardada correctamente');
+
+        setMessage('Celda y fases guardadas correctamente');
         setSnackbarOpen(true);
       } catch (error) {
         console.error('Error al actualizar la celda:', error);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+        } else if (error.request) {
+          console.error('Request data:', error.request);
+        } else {
+          console.error('Error message:', error.message);
+        }
         setMessage('Error al guardar la celda');
         setSnackbarOpen(true);
       }
@@ -89,34 +130,25 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
     }
   };
 
-  const addRow = () => {
-    setGrid((prevGrid) => [...prevGrid, Array(prevGrid[0]?.length || 0).fill(null)]);
-  };
-
-  const removeRow = () => {
-    if (grid.length > 1) {
-      setGrid((prevGrid) => prevGrid.slice(0, -1));
-    }
-  };
-
-  const addColumn = () => {
-    setGrid((prevGrid) => prevGrid.map((row) => [...row, null]));
-  };
-
-  const removeColumn = () => {
-    if (grid[0]?.length > 1) {
-      setGrid((prevGrid) => prevGrid.map((row) => row.slice(0, -1)));
-    }
-  };
-
   const handleDeleteBancal = async () => {
     try {
+      console.log('Intentando eliminar bancal...');
       await axios.delete(`http://localhost:5000/bancales/${bancal.id_bancal}`);
       onDelete(bancal.id_bancal);
       setMessage('Bancal eliminado exitosamente');
+      console.log('Bancal eliminado con éxito.');
       setSnackbarOpen(true);
     } catch (error) {
       console.error('Error al eliminar el bancal:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request data:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
       setMessage('Error al eliminar el bancal');
       setSnackbarOpen(true);
     }
@@ -131,6 +163,8 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
         columnas: grid[0]?.length || 0,
       };
 
+      console.log('Guardando cambios en bancal:', updatedBancal);
+
       const response = await axios.put(
         `http://localhost:5000/bancales/${bancal.id_bancal}`,
         updatedBancal
@@ -140,13 +174,51 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
       setSnackbarOpen(true);
     } catch (error) {
       console.error('Error al actualizar el bancal:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request data:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
       setMessage('Error al guardar los cambios');
       setSnackbarOpen(true);
     }
   };
 
   const handleCloseSnackbar = () => {
+    console.log('Cerrando Snackbar...');
     setSnackbarOpen(false);
+  };
+
+  const addRow = () => {
+    console.log('Añadiendo nueva fila al grid...');
+    setGrid((prevGrid) => [...prevGrid, Array(prevGrid[0]?.length || 0).fill(null)]);
+  };
+
+  const removeRow = () => {
+    if (grid.length > 1) {
+      console.log('Eliminando última fila del grid...');
+      setGrid((prevGrid) => prevGrid.slice(0, -1));
+    } else {
+      console.warn('No se puede eliminar la última fila.');
+    }
+  };
+
+  const addColumn = () => {
+    console.log('Añadiendo nueva columna al grid...');
+    setGrid((prevGrid) => prevGrid.map((row) => [...row, null]));
+  };
+
+  const removeColumn = () => {
+    if (grid[0]?.length > 1) {
+      console.log('Eliminando última columna del grid...');
+      setGrid((prevGrid) => prevGrid.map((row) => row.slice(0, -1)));
+    } else {
+      console.warn('No se puede eliminar la última columna.');
+    }
   };
 
   return (
@@ -161,13 +233,11 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
             <DeleteIcon />
           </IconButton>
         </div>
-        {/* Botón para guardar los cambios */}
         <Button variant="contained" color="primary" onClick={handleSaveChanges}>
           Guardar
         </Button>
       </div>
 
-      {/* Mostrar filas y columnas */}
       <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <div style={{ width: '50px' }}></div>
@@ -208,7 +278,12 @@ const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
               )}
             </div>
             {row.map((cell, colIndex) => (
-              <Cell key={colIndex} onClick={() => handleCellClick(rowIndex, colIndex)} content={cell} />
+              <Cell
+                key={colIndex}
+                onClick={() => handleCellClick(rowIndex, colIndex)}
+                content={cell ? <img src={plantIcons[cell.contenido]} alt={`Icono de ${cell.contenido}`} style={{ width: '25px', height: '25px' }} /> : ''}
+                style={{ backgroundColor: cell ? phaseColors[cell.fase] : 'white' }}
+              />
             ))}
           </div>
         ))}
