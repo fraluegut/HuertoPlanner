@@ -9,7 +9,7 @@ import EditNameModal from './EditNameModel';
 import PlantSelectionModal from './PlantSelectionModal';
 import axios from 'axios';
 
-const Bancal = ({ bancal, onDelete }) => {
+const Bancal = ({ bancal, onDelete, semanaActual, anoActual }) => {
   const [selectedCell, setSelectedCell] = useState(null);
   const [grid, setGrid] = useState([]);
   const [hoveredColumn, setHoveredColumn] = useState(null);
@@ -27,14 +27,9 @@ const Bancal = ({ bancal, onDelete }) => {
   
     if (Array.isArray(bancal.celdas)) {
       bancal.celdas.forEach(celda => {
-        // Check if fila and columna are within bounds
-        if (
-          celda.fila >= 0 && celda.fila < bancal.filas &&
-          celda.columna >= 0 && celda.columna < bancal.columnas
-        ) {
+        // Mostrar solo las celdas que corresponden a la semana y año actual
+        if (celda.semana === semanaActual && celda.ano === anoActual) {
           initialGrid[celda.fila][celda.columna] = celda.contenido;
-        } else {
-          console.warn('Celda fuera de los límites del grid', celda);
         }
       });
     } else {
@@ -42,7 +37,7 @@ const Bancal = ({ bancal, onDelete }) => {
     }
   
     setGrid(initialGrid);
-  }, [bancal.filas, bancal.columnas, bancal.celdas]);
+  }, [bancal.filas, bancal.columnas, bancal.celdas, semanaActual, anoActual]);
 
   useEffect(() => {
     initializeGrid();
@@ -60,20 +55,24 @@ const Bancal = ({ bancal, onDelete }) => {
       updatedGrid[rowIndex][colIndex] = plant[0];
 
       try {
-        const celda = bancal.celdas?.find(
-          (c) => c.fila === rowIndex && c.columna === colIndex
+        const celda = bancal.celdas.find(
+          (c) => c.fila === rowIndex && c.columna === colIndex && c.semana === semanaActual && c.ano === anoActual
         );
         if (celda) {
-          await axios.put(`http://localhost:5000/celdas/${celda.id_celda}`, {
+          await axios.put(`http://localhost:5000/celdas_temporales/${celda.id_celda}`, {
             contenido: plant[0],
+            semana: semanaActual,
+            ano: anoActual
           });
           console.log('Celda actualizada en la base de datos');
         } else {
-          const response = await axios.post('http://localhost:5000/celdas/', {
+          const response = await axios.post('http://localhost:5000/celdas_temporales/', {
             id_bancal: bancal.id_bancal,
             fila: rowIndex,
             columna: colIndex,
             contenido: plant[0],
+            semana: semanaActual,
+            ano: anoActual
           });
           console.log('Celda creada en la base de datos', response.data);
         }

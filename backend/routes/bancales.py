@@ -13,22 +13,38 @@ bancal_model = ns.model('Bancal', {
     'columnas': fields.Integer(required=True, description='Número de columnas del bancal')
 })
 
-# Define los endpoints
+# Modelo para celdas temporales
+celda_temporal_model = ns.model('CeldaTemporal', {
+    'id_celda': fields.Integer(readOnly=True, description='Identificador único de la celda'),
+    'id_bancal': fields.Integer(required=True, description='Identificador del bancal'),
+    'fila': fields.Integer(required=True, description='Número de fila de la celda'),
+    'columna': fields.Integer(required=True, description='Número de columna de la celda'),
+    'contenido': fields.String(description='Contenido de la celda (planta, etc.)'),
+    'semana': fields.Integer(required=True, description='Semana del año'),
+    'ano': fields.Integer(required=True, description='Año')
+})
+
+
+# Endpoints
 @ns.route('/')
 class BancalList(Resource):
     @ns.doc('list_bancales')
     def get(self):
-        """Obtener todos los bancales con sus celdas"""
+        """Obtener todos los bancales junto con el estado de sus celdas temporales"""
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
+
+        # Obtener todos los bancales
         cursor.execute('SELECT * FROM bancales')
         bancales = cursor.fetchall()
 
-        # Para cada bancal, obtener sus celdas
+        # Obtener todas las celdas temporales
+        cursor.execute('SELECT * FROM celdas_temporales')
+        celdas_temporales = cursor.fetchall()
+
+        # Agrupar celdas por id_bancal
         for bancal in bancales:
-            cursor.execute('SELECT * FROM celdas WHERE id_bancal = %s', (bancal['id_bancal'],))
-            celdas = cursor.fetchall()
-            bancal['celdas'] = celdas  # Añadir las celdas al objeto del bancal
+            bancal['celdas'] = [celda for celda in celdas_temporales if celda['id_bancal'] == bancal['id_bancal']]
 
         cursor.close()
         conn.close()
@@ -53,13 +69,14 @@ class BancalList(Resource):
         conn.close()
         return {"message": "Bancal creado exitosamente"}, 201
 
+
 @ns.route('/<int:id_bancal>')
 @ns.response(404, 'Bancal no encontrado')
 @ns.param('id_bancal', 'El identificador del bancal')
 class Bancal(Resource):
     @ns.doc('get_bancal')
     def get(self, id_bancal):
-        """Obtener un bancal por ID junto con el estado de sus celdas"""
+        """Obtener un bancal por ID junto con el estado de sus celdas por semana"""
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
@@ -70,8 +87,8 @@ class Bancal(Resource):
         if not bancal:
             ns.abort(404, "Bancal no encontrado")
 
-        # Obtener datos de las celdas del bancal
-        cursor.execute('SELECT * FROM celdas WHERE id_bancal = %s', (id_bancal,))
+        # Obtener datos de las celdas temporales del bancal
+        cursor.execute('SELECT * FROM celdas_temporales WHERE id_bancal = %s', (id_bancal,))
         celdas = cursor.fetchall()
 
         # Cerrar la conexión
@@ -109,7 +126,7 @@ class Bancal(Resource):
         cursor = conn.cursor()
 
         # Eliminar primero las celdas relacionadas
-        cursor.execute('DELETE FROM celdas WHERE id_bancal = %s', (id_bancal,))
+        cursor.execute('DELETE FROM celdas_temporales WHERE id_bancal = %s', (id_bancal,))
 
         # Ahora eliminar el bancal
         cursor.execute('DELETE FROM bancales WHERE id_bancal = %s', (id_bancal,))
