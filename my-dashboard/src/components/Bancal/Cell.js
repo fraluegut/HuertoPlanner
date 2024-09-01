@@ -15,7 +15,7 @@ const Cell = ({ content, onClick }) => {
         backgroundColor: content ? '#e0f7fa' : '#fff',
         transition: 'background-color 0.3s ease',
       }}
-      onMouseEnter={(e) => (e.target.style.backgroundColor = '#e0f7fa')}
+      onMouseEnter={(e) => (e.target.style.backgroundColor = content ? '#c8e6c9' : '#f1f8e9')}
       onMouseLeave={(e) => (e.target.style.backgroundColor = content ? '#e0f7fa' : '#fff')}
     >
       {content}

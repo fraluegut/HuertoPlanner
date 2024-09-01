@@ -13,6 +13,7 @@ const DisenoBancal = () => {
       try {
         const response = await axios.get('http://localhost:5000/bancales/'); // Solicitud a la API
         console.log("Datos recibidos de la API: ", response.data);
+        // Supongamos que la respuesta ya incluye celdas como un campo de cada bancal
         setBancales(response.data);
       } catch (error) {
         console.error("Error al obtener bancales: ", error);

@@ -1,41 +1,97 @@
-import React, { useState } from 'react';
-import { Button, IconButton } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import RemoveIcon from '@mui/icons-material/Remove';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Button, IconButton, Snackbar } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import RemoveIcon from '@mui/icons-material/Remove';
 import Cell from './Cell';
 import EditNameModal from './EditNameModel';
-import PlantSelectionModal from './PlantSelectionModal'; // Eliminamos DeleteConfirmModal
+import PlantSelectionModal from './PlantSelectionModal';
+import axios from 'axios';
 
 const Bancal = ({ bancal, onDelete }) => {
   const [selectedCell, setSelectedCell] = useState(null);
-  const [grid, setGrid] = useState(
-    Array(bancal.filas).fill(null).map(() => Array(bancal.columnas).fill(null))
-  );
+  const [grid, setGrid] = useState([]);
   const [hoveredColumn, setHoveredColumn] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [bancalName, setBancalName] = useState(bancal.nombre);
-  const [modalOpen, setModalOpen] = useState(false); // Eliminamos deleteConfirmOpen
+  const [modalOpen, setModalOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  const initializeGrid = useCallback(() => {
+    const initialGrid = Array(bancal.filas)
+      .fill(null)
+      .map(() => Array(bancal.columnas).fill(null));
+  
+    if (Array.isArray(bancal.celdas)) {
+      bancal.celdas.forEach(celda => {
+        // Check if fila and columna are within bounds
+        if (
+          celda.fila >= 0 && celda.fila < bancal.filas &&
+          celda.columna >= 0 && celda.columna < bancal.columnas
+        ) {
+          initialGrid[celda.fila][celda.columna] = celda.contenido;
+        } else {
+          console.warn('Celda fuera de los límites del grid', celda);
+        }
+      });
+    } else {
+      console.warn('bancal.celdas no es un array o está indefinido', bancal.celdas);
+    }
+  
+    setGrid(initialGrid);
+  }, [bancal.filas, bancal.columnas, bancal.celdas]);
+
+  useEffect(() => {
+    initializeGrid();
+  }, [initializeGrid]);
 
   const handleCellClick = (rowIndex, colIndex) => {
     setSelectedCell({ rowIndex, colIndex });
     setModalOpen(true);
   };
 
-  const handleSavePlant = (plant) => {
+  const handleSavePlant = async (plant) => {
     if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
       const updatedGrid = [...grid];
-      updatedGrid[rowIndex][colIndex] = plant[0]; // Guardar la inicial de la planta seleccionada
+      updatedGrid[rowIndex][colIndex] = plant[0];
+
+      try {
+        const celda = bancal.celdas?.find(
+          (c) => c.fila === rowIndex && c.columna === colIndex
+        );
+        if (celda) {
+          await axios.put(`http://localhost:5000/celdas/${celda.id_celda}`, {
+            contenido: plant[0],
+          });
+          console.log('Celda actualizada en la base de datos');
+        } else {
+          const response = await axios.post('http://localhost:5000/celdas/', {
+            id_bancal: bancal.id_bancal,
+            fila: rowIndex,
+            columna: colIndex,
+            contenido: plant[0],
+          });
+          console.log('Celda creada en la base de datos', response.data);
+        }
+        setMessage('Celda guardada correctamente');
+        setSnackbarOpen(true);
+      } catch (error) {
+        console.error('Error al actualizar la celda:', error);
+        setMessage('Error al guardar la celda');
+        setSnackbarOpen(true);
+      }
+
       setGrid(updatedGrid);
       setModalOpen(false);
     }
   };
 
   const addRow = () => {
-    setGrid((prevGrid) => [...prevGrid, Array(prevGrid[0].length).fill(null)]);
+    setGrid((prevGrid) => [...prevGrid, Array(prevGrid[0]?.length || 0).fill(null)]);
   };
 
   const removeRow = () => {
@@ -49,47 +105,81 @@ const Bancal = ({ bancal, onDelete }) => {
   };
 
   const removeColumn = () => {
-    if (grid[0].length > 1) {
+    if (grid[0]?.length > 1) {
       setGrid((prevGrid) => prevGrid.map((row) => row.slice(0, -1)));
     }
   };
 
-  const confirmDelete = async () => { // Usamos confirmDelete directamente
+  const handleDeleteBancal = async () => {
     try {
-      console.log("Confirmando eliminar bancal con id:", bancal.id_bancal);
-      await onDelete(bancal.id_bancal);
-      console.log("Bancal eliminado.");
+      await axios.delete(`http://localhost:5000/bancales/${bancal.id_bancal}`);
+      onDelete(bancal.id_bancal);
+      setMessage('Bancal eliminado exitosamente');
+      setSnackbarOpen(true);
     } catch (error) {
-      console.error("Error al eliminar el bancal:", error);
+      console.error('Error al eliminar el bancal:', error);
+      setMessage('Error al eliminar el bancal');
+      setSnackbarOpen(true);
     }
   };
 
+  const handleSaveChanges = async () => {
+    try {
+      const updatedBancal = {
+        id_bancal: bancal.id_bancal,
+        nombre: bancalName,
+        filas: grid.length,
+        columnas: grid[0]?.length || 0,
+      };
+
+      const response = await axios.put(
+        `http://localhost:5000/bancales/${bancal.id_bancal}`,
+        updatedBancal
+      );
+      console.log('Bancal actualizado:', response.data);
+      setMessage('Datos guardados correctamente');
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error('Error al actualizar el bancal:', error);
+      setMessage('Error al guardar los cambios');
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
+  };
+
   return (
-    <div style={{ marginBottom: '20px', backgroundColor: '#f0f0f0', padding: '10px', position: 'relative' }}>
+    <div style={{ marginBottom: '20px', backgroundColor: '#f0f0f0', padding: '10px', position: 'relative', marginRight: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <h3 style={{ margin: 0 }}>{bancalName}</h3>
           <IconButton onClick={() => setIsEditingName(true)} size="small">
             <EditIcon />
           </IconButton>
-          <IconButton onClick={confirmDelete} size="small" color="error">
+          <IconButton onClick={handleDeleteBancal} size="small" color="error">
             <DeleteIcon />
           </IconButton>
         </div>
+        {/* Botón para guardar los cambios */}
+        <Button variant="contained" color="primary" onClick={handleSaveChanges}>
+          Guardar
+        </Button>
       </div>
 
       {/* Mostrar filas y columnas */}
       <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={{ width: '50px' }}></div> {/* Espacio vacío para alineación de letras */}
-          {[...Array(grid[0].length).keys()].map((colIndex) => (
+          <div style={{ width: '50px' }}></div>
+          {[...Array(grid[0]?.length || 0).keys()].map((colIndex) => (
             <div
               key={colIndex}
               style={{ width: '50px', textAlign: 'center', fontWeight: 'bold', position: 'relative' }}
               onMouseEnter={() => setHoveredColumn(colIndex)}
               onMouseLeave={() => setHoveredColumn(null)}
             >
-              {hoveredColumn === colIndex && colIndex === grid[0].length - 1 ? (
+              {hoveredColumn === colIndex && colIndex === grid[0]?.length - 1 ? (
                 <Button onClick={removeColumn} style={{ minWidth: '40px', padding: 0, color: 'red' }}>
                   <RemoveIcon />
                 </Button>
@@ -98,7 +188,6 @@ const Bancal = ({ bancal, onDelete }) => {
               )}
             </div>
           ))}
-          {/* Botón para añadir columna */}
           <Button onClick={addColumn} style={{ minWidth: '40px', padding: 0 }}>
             <AddIcon />
           </Button>
@@ -145,6 +234,14 @@ const Bancal = ({ bancal, onDelete }) => {
       {/* Modales */}
       <EditNameModal open={isEditingName} onClose={() => setIsEditingName(false)} name={bancalName} setName={setBancalName} />
       <PlantSelectionModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSavePlant} />
+
+      {/* Snackbar para mensajes */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        message={message}
+      />
     </div>
   );
 };

@@ -18,11 +18,18 @@ bancal_model = ns.model('Bancal', {
 class BancalList(Resource):
     @ns.doc('list_bancales')
     def get(self):
-        """Obtener todos los bancales"""
+        """Obtener todos los bancales con sus celdas"""
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute('SELECT * FROM bancales')
         bancales = cursor.fetchall()
+
+        # Para cada bancal, obtener sus celdas
+        for bancal in bancales:
+            cursor.execute('SELECT * FROM celdas WHERE id_bancal = %s', (bancal['id_bancal'],))
+            celdas = cursor.fetchall()
+            bancal['celdas'] = celdas  # Añadir las celdas al objeto del bancal
+
         cursor.close()
         conn.close()
         return bancales
@@ -52,15 +59,28 @@ class BancalList(Resource):
 class Bancal(Resource):
     @ns.doc('get_bancal')
     def get(self, id_bancal):
-        """Obtener un bancal por ID"""
+        """Obtener un bancal por ID junto con el estado de sus celdas"""
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
+
+        # Obtener datos del bancal
         cursor.execute('SELECT * FROM bancales WHERE id_bancal = %s', (id_bancal,))
         bancal = cursor.fetchone()
-        cursor.close()
-        conn.close()
+
         if not bancal:
             ns.abort(404, "Bancal no encontrado")
+
+        # Obtener datos de las celdas del bancal
+        cursor.execute('SELECT * FROM celdas WHERE id_bancal = %s', (id_bancal,))
+        celdas = cursor.fetchall()
+
+        # Cerrar la conexión
+        cursor.close()
+        conn.close()
+
+        # Añadir las celdas al objeto del bancal
+        bancal['celdas'] = celdas
+
         return bancal
 
     @ns.doc('update_bancal')
@@ -98,4 +118,3 @@ class Bancal(Resource):
         cursor.close()
         conn.close()
         return {"message": "Bancal eliminado exitosamente"}, 200
-
