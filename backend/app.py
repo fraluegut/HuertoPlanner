@@ -8,7 +8,8 @@ from routes.plantas_por_celda import ns as plantas_por_celda_ns
 from routes.bancales import ns as bancales_ns
 from routes.celdas import ns as celdas_ns
 from routes.plantas_en_bancales import ns as plantas_en_bancales_ns
-from backend.routes.celdas_temporales import ns as celdas_temporales_ns
+from routes.celdas_temporales import ns as celdas_temporales_ns
+from routes.plantas_fases import ns as plantas_fases_ns  # Importa el nuevo archivo
 
 app = Flask(__name__)
 CORS(app)
@@ -21,9 +22,8 @@ api.add_namespace(plantas_por_celda_ns, path='/plantas_por_celda')
 api.add_namespace(bancales_ns, path='/bancales')
 api.add_namespace(celdas_ns, path='/celdas')
 api.add_namespace(plantas_en_bancales_ns, path='/plantas_en_bancales')
-api.add_namespace(celdas_temporales_ns,  path='/celdas_temporales')
+api.add_namespace(celdas_temporales_ns, path='/celdas_temporales')
+api.add_namespace(plantas_fases_ns, path='/plantas_fases')  # Añade el nuevo namespace
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
