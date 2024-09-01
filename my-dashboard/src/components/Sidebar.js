@@ -6,26 +6,25 @@ const Sidebar = () => {
   return (
     <div style={{ width: '250px', backgroundColor: '#f8f9fa', height: '100vh', padding: '20px' }}>
       <List>
-        {/* Corrige los atributos booleanos */}
-        <ListItem button component={NavLink} to="/" exact={true}>
+        <ListItem button component={NavLink} to="/" exact>
           <ListItemText primary="Dashboard" />
         </ListItem>
-        <ListItem button component={NavLink} to="/diseno-bancal" exact={true}>
+        <ListItem button component={NavLink} to="/diseno-bancal">
           <ListItemText primary="Diseño Bancal" />
         </ListItem>
-        <ListItem button component={NavLink} to="/vista-bancal" exact={true}>
+        <ListItem button component={NavLink} to="/vista-bancal">
           <ListItemText primary="Vista Bancal" />
         </ListItem>
-        <ListItem button component={NavLink} to="/recursos" exact={true}>
+        <ListItem button component={NavLink} to="/recursos">
           <ListItemText primary="Recursos" />
         </ListItem>
-        <ListItem button component={NavLink} to="/creditos" exact={true}>
+        <ListItem button component={NavLink} to="/creditos">
           <ListItemText primary="Créditos" />
         </ListItem>
-        <ListItem button component={NavLink} to="/plantas-por-celda" exact={true}>
+        <ListItem button component={NavLink} to="/plantas-por-celda">
           <ListItemText primary="Plantas por Celda" />
         </ListItem>
-        <ListItem button component={NavLink} to="/produccion-por-planta" exact={true}>
+        <ListItem button component={NavLink} to="/produccion-por-planta">
           <ListItemText primary="Producción por Planta" />
         </ListItem>
       </List>
