@@ -1,3 +1,5 @@
+// src/components/TopBar.js
+
 import React from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -11,6 +13,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';  // Importa el icono de logout
 import { styled, alpha } from '@mui/material/styles';
 
 const Search = styled('div')(({ theme }) => ({
@@ -51,7 +54,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const TopBar = () => {
+const TopBar = ({ onLogout }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const isMenuOpen = Boolean(anchorEl);
 
@@ -87,7 +90,7 @@ const TopBar = () => {
 
   return (
     <div>
-      <AppBar position="fixed"> {/* Usa "fixed" para asegurarte de que la barra siempre esté en la parte superior */}
+      <AppBar position="fixed">
         <Toolbar>
           <Typography
             variant="h6"
@@ -95,7 +98,7 @@ const TopBar = () => {
             component="div"
             sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}
           >
-            Dashboard
+            Planificador de Bancales
           </Typography>
           <Search>
             <SearchIconWrapper>
@@ -128,6 +131,15 @@ const TopBar = () => {
             color="inherit"
           >
             <SettingsIcon />
+          </IconButton>
+          {/* Añadir el botón de logout aquí */}
+          <IconButton
+            size="large"
+            aria-label="logout"
+            color="inherit"
+            onClick={onLogout}
+          >
+            <LogoutIcon />
           </IconButton>
         </Toolbar>
       </AppBar>

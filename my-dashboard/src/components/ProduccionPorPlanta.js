@@ -20,49 +20,58 @@ import { Visibility as VisibilityIcon, Edit as EditIcon, Delete as DeleteIcon, A
 
 const ProduccionPorPlanta = () => {
   const [producciones, setProducciones] = useState([]);
+  const [especies, setEspecies] = useState({}); // Nuevo estado para almacenar nombres de especies
   const [selectedProduccion, setSelectedProduccion] = useState(null);
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Obtener producciones al montar el componente
   useEffect(() => {
     fetchProducciones();
+    fetchEspecies(); // Nueva función para obtener nombres de especies
   }, []);
 
-  // Función para obtener las producciones desde la API
   const fetchProducciones = async () => {
     try {
       const response = await axios.get('http://localhost:5000/produccion/');
-      console.log("Datos recibidos de la API:", response.data); // Verifica los datos recibidos
-      setProducciones(response.data); // Guardar los datos en el estado
+      console.log("Datos recibidos de la API:", response.data);
+      setProducciones(response.data);
     } catch (error) {
       console.error("Error al obtener las producciones:", error);
-      console.log(error.response);  // Mostrar detalles del error si existe
+      console.log(error.response);
     }
   };
 
-  // Función para agregar o actualizar producción
+  const fetchEspecies = async () => {
+    try {
+      const response = await axios.get('http://localhost:5000/especies/');
+      const especiesData = response.data.reduce((acc, especie) => {
+        acc[especie.id_especie] = especie.nombre; // Mapa de id_especie a nombre de especie
+        return acc;
+      }, {});
+      setEspecies(especiesData);
+    } catch (error) {
+      console.error("Error al obtener las especies:", error);
+    }
+  };
+
   const saveProduccion = async (produccion) => {
     try {
       if (produccion.id_produccion) {
-        // Actualizar producción existente
         await axios.put(`http://localhost:5000/produccion/${produccion.id_produccion}`, produccion);
       } else {
-        // Agregar nueva producción
         await axios.post('http://localhost:5000/produccion/', produccion);
       }
-      fetchProducciones(); // Actualizar la lista de producciones
-      handleClose(); // Cerrar el modal
+      fetchProducciones();
+      handleClose();
     } catch (error) {
       console.error("Error al guardar la producción:", error);
     }
   };
 
-  // Función para eliminar producción
   const deleteProduccion = async (id) => {
     try {
       await axios.delete(`http://localhost:5000/produccion/${id}`);
-      fetchProducciones(); // Actualizar la lista de producciones
+      fetchProducciones();
     } catch (error) {
       console.error("Error al eliminar la producción:", error);
     }
@@ -100,7 +109,6 @@ const ProduccionPorPlanta = () => {
 
   const handleSave = () => {
     if (selectedProduccion) {
-      // Verificar que todos los campos requeridos están presentes
       if (!selectedProduccion.id_especie) {
         alert('El campo "Especie" es requerido.');
         return;
@@ -142,7 +150,7 @@ const ProduccionPorPlanta = () => {
           <TableBody>
             {producciones.map((produccion) => (
               <TableRow key={produccion.id_produccion}>
-                <TableCell>{produccion.id_especie}</TableCell>
+                <TableCell>{especies[produccion.id_especie] || produccion.id_especie}</TableCell>
                 <TableCell>{produccion.produccion_por_planta_kg}</TableCell>
                 <TableCell>
                   <TextField
@@ -175,7 +183,6 @@ const ProduccionPorPlanta = () => {
         </Table>
       </TableContainer>
 
-      {/* Modal para Ver o Editar Detalles */}
       {selectedProduccion && (
         <Dialog open={open} onClose={handleClose}>
           <DialogTitle>{isEditing ? 'Editar Producción' : 'Detalle de Producción'}</DialogTitle>

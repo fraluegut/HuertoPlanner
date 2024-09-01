@@ -7,7 +7,7 @@ const Sidebar = () => {
     <div style={{ width: '250px', backgroundColor: '#f8f9fa', height: '100vh', padding: '20px' }}>
       <List>
         <ListItem button component={NavLink} to="/" exact>
-          <ListItemText primary="Dashboard" />
+          <ListItemText primary="Resumen" />
         </ListItem>
         <ListItem button component={NavLink} to="/diseno-bancal">
           <ListItemText primary="Diseño Bancal" />
