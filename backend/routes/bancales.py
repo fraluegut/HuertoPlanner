@@ -1,5 +1,6 @@
 from flask_restx import Namespace, Resource, fields
 from backend.db import get_db_connection
+from flask import request
 
 # Crea el Namespace
 ns = Namespace('bancales', description='Operaciones relacionadas con los bancales')
@@ -86,8 +87,15 @@ class Bancal(Resource):
         """Eliminar un bancal por ID"""
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Eliminar primero las celdas relacionadas
+        cursor.execute('DELETE FROM celdas WHERE id_bancal = %s', (id_bancal,))
+
+        # Ahora eliminar el bancal
         cursor.execute('DELETE FROM bancales WHERE id_bancal = %s', (id_bancal,))
+
         conn.commit()
         cursor.close()
         conn.close()
         return {"message": "Bancal eliminado exitosamente"}, 200
+

@@ -1,36 +1,36 @@
 import React, { useState } from 'react';
-import { Modal, Button, Select, MenuItem, Box } from '@mui/material';
+import { Button, IconButton } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Cell from './Cell';
+import EditNameModal from './EditNameModel';
+import PlantSelectionModal from './PlantSelectionModal'; // Eliminamos DeleteConfirmModal
 
-const Bancal = ({ bancal }) => {
+const Bancal = ({ bancal, onDelete }) => {
   const [selectedCell, setSelectedCell] = useState(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPlant, setSelectedPlant] = useState('');
   const [grid, setGrid] = useState(
     Array(bancal.filas).fill(null).map(() => Array(bancal.columnas).fill(null))
   );
   const [hoveredColumn, setHoveredColumn] = useState(null);
   const [hoveredRow, setHoveredRow] = useState(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [bancalName, setBancalName] = useState(bancal.nombre);
+  const [modalOpen, setModalOpen] = useState(false); // Eliminamos deleteConfirmOpen
 
   const handleCellClick = (rowIndex, colIndex) => {
     setSelectedCell({ rowIndex, colIndex });
     setModalOpen(true);
   };
 
-  const handleModalClose = () => {
-    setModalOpen(false);
-    setSelectedCell(null);
-    setSelectedPlant('');
-  };
-
-  const handleSavePlant = () => {
+  const handleSavePlant = (plant) => {
     if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
       const updatedGrid = [...grid];
-      updatedGrid[rowIndex][colIndex] = selectedPlant[0]; // Guardar la inicial de la planta seleccionada
+      updatedGrid[rowIndex][colIndex] = plant[0]; // Guardar la inicial de la planta seleccionada
       setGrid(updatedGrid);
-      handleModalClose();
+      setModalOpen(false);
     }
   };
 
@@ -54,14 +54,27 @@ const Bancal = ({ bancal }) => {
     }
   };
 
+  const confirmDelete = async () => { // Usamos confirmDelete directamente
+    try {
+      console.log("Confirmando eliminar bancal con id:", bancal.id_bancal);
+      await onDelete(bancal.id_bancal);
+      console.log("Bancal eliminado.");
+    } catch (error) {
+      console.error("Error al eliminar el bancal:", error);
+    }
+  };
+
   return (
     <div style={{ marginBottom: '20px', backgroundColor: '#f0f0f0', padding: '10px', position: 'relative' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h3 style={{ margin: 0 }}>{bancal.nombre}</h3>
-        <div>
-          <Button variant="contained" color="primary" onClick={addColumn} style={{ minWidth: '40px', padding: 0 }}>
-            <AddIcon />
-          </Button>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>{bancalName}</h3>
+          <IconButton onClick={() => setIsEditingName(true)} size="small">
+            <EditIcon />
+          </IconButton>
+          <IconButton onClick={confirmDelete} size="small" color="error">
+            <DeleteIcon />
+          </IconButton>
         </div>
       </div>
 
@@ -85,18 +98,8 @@ const Bancal = ({ bancal }) => {
               )}
             </div>
           ))}
-          <Button
-            onClick={addColumn}
-            style={{
-              minWidth: '40px',
-              padding: 0,
-              marginLeft: '5px',
-              height: '50px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          {/* Botón para añadir columna */}
+          <Button onClick={addColumn} style={{ minWidth: '40px', padding: 0 }}>
             <AddIcon />
           </Button>
         </div>
@@ -117,25 +120,7 @@ const Bancal = ({ bancal }) => {
               )}
             </div>
             {row.map((cell, colIndex) => (
-              <div
-                key={colIndex}
-                onClick={() => handleCellClick(rowIndex, colIndex)}
-                style={{
-                  width: '50px',
-                  height: '50px',
-                  border: '1px solid #ccc',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  backgroundColor: cell ? '#e0f7fa' : '#fff', // Cambiar color de fondo si hay planta seleccionada
-                  transition: 'background-color 0.3s ease',
-                }}
-                onMouseEnter={(e) => (e.target.style.backgroundColor = '#e0f7fa')}
-                onMouseLeave={(e) => (e.target.style.backgroundColor = cell ? '#e0f7fa' : '#fff')}
-              >
-                {cell}
-              </div>
+              <Cell key={colIndex} onClick={() => handleCellClick(rowIndex, colIndex)} content={cell} />
             ))}
           </div>
         ))}
@@ -157,44 +142,9 @@ const Bancal = ({ bancal }) => {
         </Button>
       </div>
 
-      {/* Modal para seleccionar planta */}
-      <Modal open={modalOpen} onClose={handleModalClose}>
-        <Box
-          sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 300,
-            bgcolor: 'background.paper',
-            boxShadow: 24,
-            p: 4,
-          }}
-        >
-          <h3>Seleccionar Planta</h3>
-          <Select
-            fullWidth
-            value={selectedPlant}
-            onChange={(e) => setSelectedPlant(e.target.value)}
-            displayEmpty
-          >
-            <MenuItem value="" disabled>
-              Selecciona una planta
-            </MenuItem>
-            <MenuItem value="Tomate">Tomate</MenuItem>
-            <MenuItem value="Lechuga">Lechuga</MenuItem>
-            <MenuItem value="Pimiento">Pimiento</MenuItem>
-          </Select>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
-            <Button variant="contained" color="secondary" onClick={handleModalClose}>
-              Cancelar
-            </Button>
-            <Button variant="contained" color="primary" onClick={handleSavePlant}>
-              Guardar
-            </Button>
-          </div>
-        </Box>
-      </Modal>
+      {/* Modales */}
+      <EditNameModal open={isEditingName} onClose={() => setIsEditingName(false)} name={bancalName} setName={setBancalName} />
+      <PlantSelectionModal open={modalOpen} onClose={() => setModalOpen(false)} onSave={handleSavePlant} />
     </div>
   );
 };
